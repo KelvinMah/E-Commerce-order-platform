@@ -5,4 +5,5 @@ Rails.application.configure do
   config.consider_all_requests_local = true
   config.active_record.verbose_query_logs = true
   config.secret_key_base = ENV.fetch("SECRET_KEY_BASE", "development-secret-key-base-long-enough-for-local-use-only")
+  config.active_storage.service = :local
 end
