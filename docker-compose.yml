@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: commerce
+      POSTGRES_PASSWORD: commerce
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U commerce"]
+      interval: 3s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+  api:
+    build: .
+    ports: ["3000:3000"]
+    environment: &env
+      DB_HOST: db
+      DB_USER: commerce
+      DB_PASSWORD: commerce
+      REDIS_URL: redis://redis:6379/0
+      RAILS_ENV: development
+      CORS_ORIGINS: http://localhost:5173
+      RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-30}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+  worker:
+    build: .
+    command: ["bash", "-lc", "bundle exec sidekiq -c 10"]
+    environment: *env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+  frontend:
+    build: ./frontend
+    ports: ["5173:5173"]
+    environment:
+      VITE_API_URL: http://localhost:3000
+    depends_on: [api]
+volumes:
+  pgdata:
+  redisdata:
