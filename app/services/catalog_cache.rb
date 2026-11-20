@@ -22,6 +22,7 @@ class CatalogCache
   end
 
   def self.fetch(key, ttl: 10)
+    return yield if ENV["CATALOG_CACHE"] == "off"
     current_version = version
     return yield unless current_version
     cache_key = "#{PREFIX}:#{current_version}:#{key}"

@@ -2,6 +2,16 @@ require "rails_helper"
 require "securerandom"
 
 RSpec.describe "Concurrent checkout", :concurrency do
+  self.use_transactional_tests = false
+
+  it "uses independent PostgreSQL sessions across concurrent workers" do
+    pids = race(8) do |_i|
+      ActiveRecord::Base.connection.select_value("SELECT pg_backend_pid()")
+    end
+    expect(pids.map(&:first)).to all(eq(:ok))
+    expect(pids.map(&:last).uniq.size).to be > 1
+  end
+
   def race(count, &block)
     gate = Queue.new
     results = Queue.new

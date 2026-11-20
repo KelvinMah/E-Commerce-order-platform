@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Requires hey, running API and 100K seeded products. Run twice with identical URL:
-# 1. Redis enabled, 2. Redis disabled (DB fallback), then compare the output files.
+# Benchmark a hot catalog page with identical settings in both API modes.
+# Start the API with CATALOG_CACHE=on (default) or CATALOG_CACHE=off,
+# then run this script with LABEL=cached or LABEL=uncached respectively.
+# Never stop Redis to produce an uncached baseline: that measures timeout overhead.
 BASE_URL="${BASE_URL:-http://localhost:3000}"
 REQUESTS="${REQUESTS:-2000}"
 CONCURRENCY="${CONCURRENCY:-20}"

@@ -71,15 +71,13 @@ This is a working demo architecture, **not production-ready commerce**. It has n
 
 ## CI and repeatable catalog load test
 
-GitHub Actions is configured to run Rails RSpec with PostgreSQL/Redis and frontend Vitest/build on every push and pull request. The workflows must pass on GitHub before treating them as verified. Dependency lockfiles should be generated and committed from a machine with package-registry access.
+GitHub Actions is configured to run Rails RSpec with PostgreSQL/Redis and frontend Vitest/build on every push and pull request. The workflows must pass on GitHub before treating them as verified. Generate and commit `Gemfile.lock` and `frontend/package-lock.json` with package-registry access before enabling reproducible CI installs.
 
-To compare the **same endpoint** with and without Redis, seed 100,000 products and install `hey` locally. Run the first command with Redis enabled, then temporarily stop Redis and run the second command (the API falls back to PostgreSQL):
+## Catalog performance comparison
 
-```bash
-LABEL=cached bash scripts/load_catalog.sh
-docker compose stop redis
-LABEL=uncached bash scripts/load_catalog.sh
-docker compose start redis
-```
+For an apples-to-apples **hot catalog page** comparison, seed the same database with 100,000 products and run the API in two separate configurations, with Redis running in both:
 
-On Windows, use Git Bash or WSL for the shell script. Results are written to `catalog-results/` and include requests/second and latency percentiles. These are environment-dependent measurements, not fixed performance claims. Do not stop Redis while testing Sidekiq jobs.
+- Cached: `CATALOG_CACHE=on` (default); run `LABEL=cached bash scripts/load_catalog.sh`.
+- Uncached: restart the API with `CATALOG_CACHE=off`; run `LABEL=uncached bash scripts/load_catalog.sh`.
+
+Keep request count, concurrency, dataset, and hardware identical. The script saves `hey` throughput and latency reports in `catalog-results/`. These are measurements to collect, not predetermined results.
